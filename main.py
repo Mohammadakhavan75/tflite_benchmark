@@ -53,13 +53,13 @@ if __name__ == '__main__':
     if args.img_path is not None:
         imgs = loader.load_img(args.img_path)
     elif args.vid_path is not None:
-        imgs = loader.load_vid(args.vid_path)
-    else:
-        video_capture = cv2.VideoCapture(0)
+        # imgs = loader.load_vid(args.vid_path)
+        video_capture = cv2.VideoCapture(args.vid_path)
         if not video_capture.isOpened():
             print("Error: Could not open the video file.")
             exit()
 
+        times=[]
         while True:
             ret, frame = video_capture.read()
             if not ret:
@@ -73,14 +73,49 @@ if __name__ == '__main__':
             s = time.time()
             out = model.inference(img_tf)
             e = time.time()
+            times.append(e-s)
             print(f" Inference time is: {e-s}")
 
             # Exit the loop if 'q' key is pressed
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                print(f" Average time is: {1 / np.mean(times)}")
                 break
 
         # Release the video capture object and close any open windows
         video_capture.release()
+        print(f" Average time is: {1 / np.mean(times)}")
+        exit()
+    else:
+        video_capture = cv2.VideoCapture(0)
+        if not video_capture.isOpened():
+            print("Error: Could not open the video file.")
+            exit()
+
+        times=[]
+        while True:
+            ret, frame = video_capture.read()
+            if not ret:
+                break  # Break the loop if the video has ended
+
+            img_np = cv2.resize(frame, (model.input_shape, model.input_shape))
+            if img_np.shape[0] != model.model_shape[1]:
+                img_np = img_np.transpose(2, 0, 1)
+            img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
+            img_tf = tf.expand_dims(img_tf , axis=0)
+            s = time.time()
+            out = model.inference(img_tf)
+            e = time.time()
+            times.append(e-s)
+            print(f" Inference time is: {e-s}")
+
+            # Exit the loop if 'q' key is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                print(f" Average time is: {1 / np.mean(times)}")
+                break
+
+        # Release the video capture object and close any open windows
+        video_capture.release()
+        print(f" Average time is: {1 / np.mean(times)}")
         exit()
 
 
