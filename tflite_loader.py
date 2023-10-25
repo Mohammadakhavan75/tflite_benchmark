@@ -1,10 +1,11 @@
 import tensorflow as tf
 import numpy as np
+import tflite_runtime.interpreter as tflite
 
 class model_loader():
-    def __init__(self, filepath):
+    def __init__(self, args):
         # Load TFLite model and allocate tensors.
-        self.interpreter = tf.lite.Interpreter(model_path=filepath, experimental_delegates=[armnn_delegate])
+        self.interpreter = tf.lite.Interpreter(model_path=args.model_path)#, experimental_delegates=[args.armnn_delegate])
         self.interpreter.allocate_tensors()
 
         # Get input and output tensors.
@@ -13,9 +14,9 @@ class model_loader():
 
         # Test model on random input data.
         self.input_shape = self.input_details[0]['shape']
-        
 
-    def preprocessing(self, img):
+
+    def _pre_processing(self, img):
         return tf.image.resize_images(img, (self.input_shape, self.input_shape))
 
 
