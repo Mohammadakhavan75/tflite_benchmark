@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import tensorflow as tf
-
+# TODO: I have to make shape of image automatic
 class data_loader():
     def __init__(self, img_shape):
         self.img_shape = img_shape
@@ -9,7 +9,7 @@ class data_loader():
     def load_img(self, path):
         img_np = cv2.imread(path)
         img_np = cv2.resize(img_np, (self.img_shape, self.img_shape))
-        img_np = img_np.transpose(2, 0, 1)
+        # img_np = img_np.transpose(2, 0, 1)
         self.img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
         self.img_tf = tf.expand_dims(self.img_tf , axis=0)
         return [self.img_tf]
