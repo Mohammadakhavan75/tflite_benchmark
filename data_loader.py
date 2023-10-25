@@ -5,12 +5,13 @@ import tensorflow as tf
 class data_loader():
     def __init__(self, img_shape, model_shape):
         self.img_shape = img_shape
-        self.model_shape
+        self.model_shape = model_shape
         
     def load_img(self, path):
         img_np = cv2.imread(path)
         img_np = cv2.resize(img_np, (self.img_shape, self.img_shape))
-        if img_np.shape != self.model_shape:
+        print(f"{img_np.shape[0]}, {self.img_shape}, {img_np.shape[0]!=self.img_shape}")
+        if img_np.shape[0] != self.model_shape[1]:
             img_np = img_np.transpose(2, 0, 1)
         self.img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
         self.img_tf = tf.expand_dims(self.img_tf , axis=0)
@@ -36,7 +37,7 @@ class data_loader():
 
             # Process and display the frame (e.g., you can show it using cv2.imshow)
             img_np = cv2.resize(frame, (self.img_shape, self.img_shape))
-            if img_np.shape != self.model_shape:
+            if img_np.shape[0] != self.model_shape[1]:
                 img_np = img_np.transpose(2, 0, 1)
             self.img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
             self.img_tf = tf.expand_dims(self.img_tf , axis=0)

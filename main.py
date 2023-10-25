@@ -46,7 +46,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     model = model_loader(args)
     print("Model initiated")
-    loader = data_loader(img_shape=model.input_shape)
+    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape)
     print("Data loader initiated")
     if args.img_path is not None:
         imgs = loader.load_img(args.img_path)
