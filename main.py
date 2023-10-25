@@ -3,7 +3,8 @@ from tflite_loader import model_loader
 import argparse
 import numpy as np
 from data_loader import data_loader
-
+import time 
+import os
 """
 I should write a test for all possible inputs
 for example when I change a thing I should run these both:
@@ -22,11 +23,14 @@ def parsing():
     parser.add_argument('--img_path', help='Path for image file', type=str, default=None)
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
+    parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
     parser.add_argument('--delegate_path', help='File path of ArmNN delegate file', type=str, default=None)
     parser.add_argument('--preferred_backends', help='list of backends in order of preference', type=str, nargs='+', required=False, default=["CpuAcc", "CpuRef"])
     args = parser.parse_args()
     args.armnn_delegate = None
+
     return args
+
 if __name__ == '__main__':
     args = parsing()
     # delegate_path = args.delegate_path
@@ -38,8 +42,12 @@ if __name__ == '__main__':
     #     "backends": backends,
     #     "logging-severity": "info"})
     
+    if args.device == 'cpu':
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     model = model_loader(args)
+    print("Model initiated")
     loader = data_loader(img_shape=model.input_shape)
+    print("Data loader initiated")
     if args.img_path is not None:
         imgs = loader.load_img(args.img_path)
     elif args.vid_path is not None:
@@ -48,8 +56,15 @@ if __name__ == '__main__':
         # Stream
         pass
 
+    print("Data loaded")
+    
+    times = []
     for img in imgs:
+        s = time.time()
         out = model.inference(img)
-
-    print(f"output is recived {out} \n shape is: {out.shape}, argmax: {np.argmax(out, axis=1)}")
-
+        e = time.time()
+        times.append(e-s)
+    
+    print(f"output is recived {out} \n shape is: {out.shape},\
+           argmax: {np.argmax(out, axis=1)}\n \
+            average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
