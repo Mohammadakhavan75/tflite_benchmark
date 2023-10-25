@@ -1,6 +1,4 @@
 import tensorflow as tf
-import numpy as np
-from data_loader import data_loader
 # import tflite_runtime.interpreter as tflite
 
 class model_loader():
@@ -19,17 +17,10 @@ class model_loader():
         # Test model on random input data.
         self.input_shape = self.input_details[0]['shape'][2]
         self.model_shape = self.input_details[0]['shape']
-        print("Expected input shape:", self.input_details[0]['shape'])
-
-    def _pre_processing(self, args):
-        loader = data_loader(args.img_path, img_shape=self.input_shape)
-        img = loader.load()
-        return img
-
-
-    def inference(self, args):
+        
+    
+    def inference(self, input_tensor):
         # BGR image to tensor
-        input_tensor = self._pre_processing(args)
         if input_tensor.shape != self.model_shape:
             raise ValueError(f"Input data shape {input_tensor.shape} does not match the expected shape {self.model_shape}")
 
