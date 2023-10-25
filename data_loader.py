@@ -7,6 +7,7 @@ class data_loader():
         self.img_shape = img_shape
         self.model_shape = model_shape
         
+
     def load_img(self, path):
         img_np = cv2.imread(path)
         img_np = cv2.resize(img_np, (self.img_shape, self.img_shape))
@@ -17,11 +18,12 @@ class data_loader():
         self.img_tf = tf.expand_dims(self.img_tf , axis=0)
         return [self.img_tf]
     
+
     def load_vid(self, path):
         self.img_list = []
         # Open the video file
         video_capture = cv2.VideoCapture(path)  # Replace 'your_video.mp4' with your video file's path
-
+        
         # Check if the video file was successfully opened
         if not video_capture.isOpened():
             print("Error: Could not open the video file.")
