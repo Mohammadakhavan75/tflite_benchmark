@@ -74,7 +74,7 @@ if __name__ == '__main__':
             out = model.inference(img_tf)
             e = time.time()
             times.append(e-s)
-            print(f" Inference time is: {e-s}")
+            # print(f" Inference time is: {e-s}")
 
             # Exit the loop if 'q' key is pressed
             if cv2.waitKey(1) & 0xFF == ord('q'):
