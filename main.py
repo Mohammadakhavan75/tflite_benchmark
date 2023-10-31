@@ -5,9 +5,13 @@ import numpy as np
 from data_loader import data_loader
 import time 
 import os
+from queue import Queue
+from tqdm import tqdm
+
 import cv2
 import tensorflow as tf
 """
+Average time is: 142.49318310139603
 I should write a test for all possible inputs
 for example when I change a thing I should run these both:
 
@@ -23,7 +27,11 @@ def parsing():
     parser = argparse.ArgumentParser(description='',
                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--img_path', help='Path for image file', type=str, default=None)
+    parser.add_argument('--img_folder', help='Path for image folder', type=str, default=None)
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
+    parser.add_argument('--stream', help='Stream from device', type=int, default=None)
+    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection', type=str, default=None)
+    parser.add_argument('--annot_type', help='Annotation type can be coco', type=str, default='coco')
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
     parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
     parser.add_argument('--delegate_path', help='File path of ArmNN delegate file', type=str, default=None)
@@ -33,6 +41,20 @@ def parsing():
 
     return args
 
+def queue_reader(loader, vid):
+    times = []
+    loader.load_vid(vid)
+    while True:
+        data = data_queue.get()
+        s = time.time()
+        out = model.inference(data)
+        e = time.time()
+        times.append(e-s)
+        print(f" Inference time is: {e-s}")
+        if not loader.ret:
+            break  # Break the loop if the video has ended
+
+    print(f" Average time is: {1 / np.mean(times)}")
 if __name__ == '__main__':
     args = parsing()
     # delegate_path = args.delegate_path
@@ -48,86 +70,61 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     model = model_loader(args)
     print("Model initiated")
-    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape)
+    data_queue = Queue()
+    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape, data_queue=data_queue)
+
     print("Data loader initiated")
+
     if args.img_path is not None:
         imgs = loader.load_img(args.img_path)
+        times = []
+        for img in imgs:
+            s = time.time()
+            out = model.inference(img)
+            e = time.time()
+            times.append(e-s)
+        
+        print(f"output is recived {out} \n shape is: {out.shape},\
+            argmax: {np.argmax(out, axis=1)}\n \
+                average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
+
+    elif args.img_folder and args.mode=="classification": 
+        img_folders = os.listdir(args.img_folder)
+        img_folders_paths = []
+        for img_folder in img_folders:
+            img_folders_paths.append(os.path.join(args.img_folder, img_folder))
+        
+        imgs_full_path = []
+        imgs_labels = []
+        for i, path in enumerate(img_folders_paths):
+            imgs_path = os.listdir(path)
+            for img_path in imgs_path:
+                imgs_full_path.append(os.path.join(path, img_path))
+                imgs_labels.append(i)
+
+        times = []
+        acc = []
+        for i, img in enumerate(tqdm(imgs_full_path)):
+            img = loader.load_img(img)
+            s = time.time()
+            out = model.inference(img)
+            e = time.time()
+            times.append(e-s)
+            acc_i = np.argmax(out, axis=1) == imgs_labels[i]
+            acc.append(acc_i)
+
+        print(f"avg acc: {np.mean(acc)}\n \
+                average time is: {np.mean(times)}\n \
+                    average frame rate is: {1 / np.mean(times)}")
+        
     elif args.vid_path is not None:
-        # imgs = loader.load_vid(args.vid_path)
-        video_capture = cv2.VideoCapture(args.vid_path)
-        if not video_capture.isOpened():
-            print("Error: Could not open the video file.")
-            exit()
-
-        times=[]
-        while True:
-            ret, frame = video_capture.read()
-            if not ret:
-                break  # Break the loop if the video has ended
-
-            img_np = cv2.resize(frame, (model.input_shape, model.input_shape))
-            if img_np.shape[0] != model.model_shape[1]:
-                img_np = img_np.transpose(2, 0, 1)
-            img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
-            img_tf = tf.expand_dims(img_tf , axis=0)
-            s = time.time()
-            out = model.inference(img_tf)
-            e = time.time()
-            times.append(e-s)
-            # print(f" Inference time is: {e-s}")
-
-            # Exit the loop if 'q' key is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                print(f" Average time is: {1 / np.mean(times)}")
-                break
-
-        # Release the video capture object and close any open windows
-        video_capture.release()
-        print(f" Average time is: {1 / np.mean(times)}")
+        times = loader.load_vid(args.vid_path, model, log=True)
+        print(f"Average inference time is: {np.mean(times)}\n \
+              Average frame rate is: {1 / np.mean(times)}")
         exit()
+
     else:
-        video_capture = cv2.VideoCapture(0)
-        if not video_capture.isOpened():
-            print("Error: Could not open the video file.")
-            exit()
-
-        times=[]
-        while True:
-            ret, frame = video_capture.read()
-            if not ret:
-                break  # Break the loop if the video has ended
-
-            img_np = cv2.resize(frame, (model.input_shape, model.input_shape))
-            if img_np.shape[0] != model.model_shape[1]:
-                img_np = img_np.transpose(2, 0, 1)
-            img_tf = tf.convert_to_tensor(img_np, dtype=tf.float32)
-            img_tf = tf.expand_dims(img_tf , axis=0)
-            s = time.time()
-            out = model.inference(img_tf)
-            e = time.time()
-            times.append(e-s)
-            print(f" Inference time is: {e-s}")
-
-            # Exit the loop if 'q' key is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                print(f" Average time is: {1 / np.mean(times)}")
-                break
-
-        # Release the video capture object and close any open windows
-        video_capture.release()
-        print(f" Average time is: {1 / np.mean(times)}")
+        times = loader.load_vid(args.stream, model)
+        print(f"Average inference time is: {np.mean(times)}\n \
+              Average frame rate is: {1 / np.mean(times)}")
         exit()
-
-
-    print("Data loaded")
-    
-    times = []
-    for img in imgs:
-        s = time.time()
-        out = model.inference(img)
-        e = time.time()
-        times.append(e-s)
-    
-    print(f"output is recived {out} \n shape is: {out.shape},\
-           argmax: {np.argmax(out, axis=1)}\n \
-            average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
