@@ -2,12 +2,14 @@ from tflite_loader import model_loader
 # import tflite_runtime.interpreter as mytflite
 import argparse
 import numpy as np
-from data_loader2 import data_loader2
+from data_loader import data_loader
 import time 
 import os
+from queue import Queue
+from tqdm import tqdm
+
 import cv2
 import tensorflow as tf
-from queue import Queue
 """
 Average time is: 142.49318310139603
 I should write a test for all possible inputs
@@ -28,6 +30,7 @@ def parsing():
     parser.add_argument('--img_folder', help='Path for image folder', type=str, default=None)
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
     parser.add_argument('--stream', help='Stream from device', type=int, default=None)
+    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection', type=str, default=None)
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
     parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
     parser.add_argument('--delegate_path', help='File path of ArmNN delegate file', type=str, default=None)
@@ -67,9 +70,10 @@ if __name__ == '__main__':
     model = model_loader(args)
     print("Model initiated")
     data_queue = Queue()
-    loader = data_loader2(img_shape=model.input_shape, model_shape=model.model_shape, data_queue=data_queue)
+    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape, data_queue=data_queue)
 
     print("Data loader initiated")
+
     if args.img_path is not None:
         imgs = loader.load_img(args.img_path)
         times = []
@@ -83,11 +87,43 @@ if __name__ == '__main__':
             argmax: {np.argmax(out, axis=1)}\n \
                 average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
 
-    elif None: 
-        pass
+    elif args.img_folder and args.mode=="classification": 
+        img_folders = os.listdir(args.img_folder)
+        img_folders_paths = []
+        for img_folder in img_folders:
+            img_folders_paths.append(os.path.join(args.img_folder, img_folder))
+        
+        imgs_full_path = []
+        imgs_labels = []
+        for i, path in enumerate(img_folders_paths):
+            imgs_path = os.listdir(path)
+            for img_path in imgs_path:
+                imgs_full_path.append(os.path.join(path, img_path))
+                imgs_labels.append(i) 
+
+        times = []
+        acc = []
+        for i, img in enumerate(tqdm(imgs_full_path)):
+            img = loader.load_img(img)
+            s = time.time()
+            out = model.inference(img)
+            e = time.time()
+            times.append(e-s)
+            acc_i = np.argmax(out, axis=1) == imgs_labels[i]
+            acc.append(acc_i)
+
+        print(f"avg acc: {np.mean(acc)}\n \
+                average time is: {np.mean(times)}\n \
+                    average frame rate is: {1 / np.mean(times)}")
+        
     elif args.vid_path is not None:
-        queue_reader(loader, args.vid_path)
+        times = loader.load_vid(args.vid_path, model, log=True)
+        print(f"Average inference time is: {np.mean(times)}\n \
+              Average frame rate is: {1 / np.mean(times)}")
         exit()
+
     else:
-        queue_reader(loader, args.stream)
+        times = loader.load_vid(args.stream, model)
+        print(f"Average inference time is: {np.mean(times)}\n \
+              Average frame rate is: {1 / np.mean(times)}")
         exit()
