@@ -44,3 +44,37 @@ class COCOParser:
         lic_ids = [self.im_dict[im_id]["license"] for im_id in im_ids]
         return [self.licenses_dict[lic_id] for lic_id in lic_ids]
 
+class confusion():
+    def __init__(self, y_true, y_pred):
+        self.c_m = confusion_matrix(y_true, y_pred)
+        self.FP = self.c_m.sum(axis=0) - np.diag(self.c_m)  
+        self.FN = self.c_m.sum(axis=1) - np.diag(self.c_m)
+        self.TP = np.diag(self.c_m)
+        self.TN = self.c_m.values.sum() - (self.FP + self.FN + self.TP)
+
+    # Fall out or false positive rate
+    def FPR(self):
+        return self.FP / (self.FP + self.TN)
+    
+    # Sensitivity, hit rate, recall, or true positive rate    
+    def TPR(self):
+        return self.TP / (self.TP + self.FN)
+    
+    # Specificity or true negative rate
+    def TNR(self):
+        return self.TN / (self.TN + self.FP)
+
+    def FNR(self):
+        return self.FN / (self.TP + self.FN)
+    
+    # Precision or positive predictive value
+    def Precision(self):
+        return self.TP / (self.TP + self.FP)
+    
+    # Negative predictive value    
+    def NPV(self):
+        return self.TN / (self.TN + self.FN)
+    
+    # False discovery rate    
+    def FDR(self):
+        return self.FP / (self.TP + self.FP)
