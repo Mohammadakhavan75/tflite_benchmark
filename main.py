@@ -31,6 +31,7 @@ def parsing():
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
     parser.add_argument('--stream', help='Stream from device', type=int, default=None)
     parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection', type=str, default=None)
+    parser.add_argument('--annot_type', help='Annotation type can be coco', type=str, default='coco')
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
     parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
     parser.add_argument('--delegate_path', help='File path of ArmNN delegate file', type=str, default=None)
@@ -99,7 +100,7 @@ if __name__ == '__main__':
             imgs_path = os.listdir(path)
             for img_path in imgs_path:
                 imgs_full_path.append(os.path.join(path, img_path))
-                imgs_labels.append(i) 
+                imgs_labels.append(i)
 
         times = []
         acc = []
