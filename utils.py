@@ -44,7 +44,7 @@ class COCOParser:
         lic_ids = [self.im_dict[im_id]["license"] for im_id in im_ids]
         return [self.licenses_dict[lic_id] for lic_id in lic_ids]
 
-class confusion():
+class metrics():
     def __init__(self, y_true, y_pred):
         self.c_m = confusion_matrix(y_true, y_pred)
         self.FP = self.c_m.sum(axis=0) - np.diag(self.c_m)  
