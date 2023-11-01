@@ -7,11 +7,9 @@ import time
 import os
 from queue import Queue
 from tqdm import tqdm
+from utils import metrics
 
-import cv2
-import tensorflow as tf
 """
-Average time is: 142.49318310139603
 I should write a test for all possible inputs
 for example when I change a thing I should run these both:
 
@@ -70,8 +68,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     model = model_loader(args)
     print("Model initiated")
-    data_queue = Queue()
-    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape, data_queue=data_queue)
+    loader = data_loader(img_shape=model.input_shape, model_shape=model.model_shape)
 
     print("Data loader initiated")
 
@@ -102,6 +99,7 @@ if __name__ == '__main__':
 
         times = []
         acc = []
+        preds = []
         for i, img in enumerate(tqdm(imgs_full_path)):
             img = loader.load_img(img)
             s = time.time()
@@ -109,11 +107,15 @@ if __name__ == '__main__':
             e = time.time()
             times.append(e-s)
             acc_i = np.argmax(out, axis=1) == imgs_labels[i]
+            preds.append(np.argmax(out, axis=1))
             acc.append(acc_i)
+
+        metric = metrics(y_pred=preds, y_true=imgs_labels)
 
         print(f"avg acc: {np.mean(acc)}\n \
                 average time is: {np.mean(times)}\n \
                     average frame rate is: {1 / np.mean(times)}")
+        print(f"FPR: {metric.FPR}, TPR: {metric.TPR}, FNR: {metric.FNR}, TNR: {metric.TNR}")
         
     elif args.vid_path is not None:
         times = loader.load_vid(args.vid_path, model, log=True)
