@@ -84,11 +84,9 @@ if __name__ == '__main__':
             e = time.time()
             times.append(e-s)
         
-        print(f"output is recived {out} \n shape is: {out.shape},\
-            argmax: {np.argmax(out, axis=1)}\n \
-                average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
+        print(f"average time is: {np.mean(times)} average frame rate is: {1 / np.mean(times)}")
 
-    elif args.img_folder and args.mode=="classification": 
+    elif args.img_folder and args.mode=="classification":
         img_folders = os.listdir(args.img_folder)
         img_folders_paths = []
         for img_folder in img_folders:
@@ -122,8 +120,8 @@ if __name__ == '__main__':
         print(f"Average inference time is: {np.mean(times)}\n \
               Average frame rate is: {1 / np.mean(times)}")
         exit()
-
-    else:
+    # Stream from webcam
+    else: 
         times = loader.load_vid(args.stream, model)
         print(f"Average inference time is: {np.mean(times)}\n \
               Average frame rate is: {1 / np.mean(times)}")
