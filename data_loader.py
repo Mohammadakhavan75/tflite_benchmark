@@ -7,7 +7,6 @@ class data_loader():
     def __init__(self, img_shape, model_shape):
         self.img_shape = img_shape
         self.model_shape = model_shape
-        self.data_queue = data_queue
         self.ret = True
         
 
