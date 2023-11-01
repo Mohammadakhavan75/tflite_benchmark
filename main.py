@@ -39,20 +39,7 @@ def parsing():
 
     return args
 
-def queue_reader(loader, vid):
-    times = []
-    loader.load_vid(vid)
-    while True:
-        data = data_queue.get()
-        s = time.time()
-        out = model.inference(data)
-        e = time.time()
-        times.append(e-s)
-        print(f" Inference time is: {e-s}")
-        if not loader.ret:
-            break  # Break the loop if the video has ended
 
-    print(f" Average time is: {1 / np.mean(times)}")
 if __name__ == '__main__':
     args = parsing()
     # delegate_path = args.delegate_path
