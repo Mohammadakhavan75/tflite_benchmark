@@ -4,7 +4,7 @@ import tensorflow as tf
 import time
 # TODO: I have to make shape of image automatic
 class data_loader():
-    def __init__(self, img_shape, model_shape, data_queue):
+    def __init__(self, img_shape, model_shape):
         self.img_shape = img_shape
         self.model_shape = model_shape
         self.data_queue = data_queue
