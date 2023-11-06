@@ -1,10 +1,12 @@
-from collections import defaultdict
-import json
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import os
 import torch
-import torchvision
+
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  # YOLO
+
 
 class COCOParser:
     def __init__(self, labels_root_path, imgs_root_path):
@@ -374,4 +376,6 @@ class object_detection_metrics():
 
         # IoU = inter / (area1 + area2 - inter)
         return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
+
+
 
