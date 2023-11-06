@@ -139,7 +139,6 @@ class object_detection_metrics():
         """
 
         # Checks
-        print(f"conf_thres shape: {conf_thres.shape}, conf_thres: {conf_thres}")
         assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
         assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
         if isinstance(prediction, (list, tuple)):  # YOLOv8 model in validation model, output = (inference_out, loss_out)
@@ -161,7 +160,7 @@ class object_detection_metrics():
         multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
 
         prediction = prediction.transpose(-1, -2)  # shape(1,84,6300) to shape(1,6300,84)
-        prediction[..., :4] = xywh2xyxy(prediction[..., :4])  # xywh to xyxy
+        prediction[..., :4] = self.xywh2xyxy(prediction[..., :4])  # xywh to xyxy
 
         # t = time.time()
         output = [torch.zeros((0, 6 + nm), device=prediction.device)] * bs
@@ -174,7 +173,7 @@ class object_detection_metrics():
             if labels and len(labels[xi]):
                 lb = labels[xi]
                 v = torch.zeros((len(lb), nc + nm + 4), device=x.device)
-                v[:, :4] = xywh2xyxy(lb[:, 1:5])  # box
+                v[:, :4] = self.xywh2xyxy(lb[:, 1:5])  # box
                 v[range(len(lb)), lb[:, 0].long() + 4] = 1.0  # cls
                 x = torch.cat((x, v), 0)
 
