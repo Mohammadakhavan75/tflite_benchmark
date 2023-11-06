@@ -299,3 +299,74 @@ def update_metrics(preds, batch):
             # TODO: maybe remove these `self.` arguments as they already are member variable
             if self.args.plots:
                 self.confusion_matrix.process_batch(predn, labelsn)
+
+
+
+def process_batch(self, detections, labels):
+        """
+        Update confusion matrix for object detection task.
+
+        Args:
+            detections (Array[N, 6]): Detected bounding boxes and their associated information.
+                                      Each row should contain (x1, y1, x2, y2, conf, class).
+            labels (Array[M, 5]): Ground truth bounding boxes and their associated class labels.
+                                  Each row should contain (class, x1, y1, x2, y2).
+        """
+        if detections is None:
+            gt_classes = labels.int()
+            for gc in gt_classes:
+                self.matrix[self.nc, gc] += 1  # background FN
+            return
+
+        detections = detections[detections[:, 4] > self.conf]
+        gt_classes = labels[:, 0].int()
+        detection_classes = detections[:, 5].int()
+        iou = box_iou(labels[:, 1:], detections[:, :4])
+
+        x = torch.where(iou > self.iou_thres)
+        if x[0].shape[0]:
+            matches = torch.cat((torch.stack(x, 1), iou[x[0], x[1]][:, None]), 1).cpu().numpy()
+            if x[0].shape[0] > 1:
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
+                matches = matches[matches[:, 2].argsort()[::-1]]
+                matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
+        else:
+            matches = np.zeros((0, 3))
+
+        n = matches.shape[0] > 0
+        m0, m1, _ = matches.transpose().astype(int)
+        for i, gc in enumerate(gt_classes):
+            j = m0 == i
+            if n and sum(j) == 1:
+                self.matrix[detection_classes[m1[j]], gc] += 1  # correct
+            else:
+                self.matrix[self.nc, gc] += 1  # true background
+
+        if n:
+            for i, dc in enumerate(detection_classes):
+                if not any(m1 == i):
+                    self.matrix[dc, self.nc] += 1  # predicted background
+
+
+def box_iou(box1, box2, eps=1e-7):
+    """
+    Calculate intersection-over-union (IoU) of boxes.
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+    Based on https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+
+    Args:
+        box1 (torch.Tensor): A tensor of shape (N, 4) representing N bounding boxes.
+        box2 (torch.Tensor): A tensor of shape (M, 4) representing M bounding boxes.
+        eps (float, optional): A small value to avoid division by zero. Defaults to 1e-7.
+
+    Returns:
+        (torch.Tensor): An NxM tensor containing the pairwise IoU values for every element in box1 and box2.
+    """
+
+    # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
+    (a1, a2), (b1, b2) = box1.unsqueeze(1).chunk(2, 2), box2.unsqueeze(0).chunk(2, 2)
+    inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp_(0).prod(2)
+
+    # IoU = inter / (area1 + area2 - inter)
+    return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
