@@ -76,10 +76,11 @@ class Namespace:
 
 
 class yolo_data_loader():
-    def __init__(self, yaml_path) -> None:
+    def __init__(self, yaml_path, batch_size=1) -> None:
         self.yaml_path = yaml_path
         self.data = self.check_det_dataset(yaml_path)
         self.workers = 1
+        self.batch_size=batch_size
         self.args = Namespace(task='detect', mode='val', model='yolov8n.pt', data='coco128.yaml', epochs=100,\
                             patience=50, batch=16, imgsz=640, save=True, save_period=-1, cache=False, device=None,\
                             workers=0, project=None, name=None, exist_ok=False, pretrained=True, optimizer='auto',\
@@ -223,7 +224,7 @@ class yolo_data_loader():
         return build_dataloader(dataset, batch_size, self.workers, shuffle=False, rank=-1)  # return dataloader
 
  
-    def load(self, batch_size, type='val'):
+    def load(self, type='val'):
         return self.get_dataloader(self.data.get(type), batch_size)
     
 
