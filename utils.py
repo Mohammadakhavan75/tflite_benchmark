@@ -71,7 +71,7 @@ class object_detection_metrics():
     def __init__(self):
         pass
 
-    def xywh2xyxy(x):
+    def xywh2xyxy(self, x):
         """
         Convert bounding box coordinates from (x, y, width, height) format to (x1, y1, x2, y2) format where (x1, y1) is the
         top-left corner and (x2, y2) is the bottom-right corner.
@@ -94,6 +94,7 @@ class object_detection_metrics():
 
 
     def non_max_suppression(
+            self,
             prediction,
             conf_thres=0.25,
             iou_thres=0.45,
@@ -138,6 +139,7 @@ class object_detection_metrics():
         """
 
         # Checks
+        print(f"conf_thres shape: {conf_thres.shape}, conf_thres: {conf_thres}")
         assert 0 <= conf_thres <= 1, f'Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0'
         assert 0 <= iou_thres <= 1, f'Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0'
         if isinstance(prediction, (list, tuple)):  # YOLOv8 model in validation model, output = (inference_out, loss_out)
@@ -217,7 +219,7 @@ class object_detection_metrics():
         return output
 
 
-    def clip_boxes(boxes, shape):
+    def clip_boxes(self, boxes, shape):
         """
         Takes a list of bounding boxes and a shape (height, width) and clips the bounding boxes to the shape.
 
@@ -235,7 +237,7 @@ class object_detection_metrics():
             boxes[..., [1, 3]] = boxes[..., [1, 3]].clip(0, shape[0])  # y1, y2
 
 
-    def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, padding=True):
+    def scale_boxes(self, img1_shape, boxes, img0_shape, ratio_pad=None, padding=True):
         """
         Rescales bounding boxes (in the format of xyxy) from the shape of the image they were originally specified in
         (img1_shape) to the shape of a different image (img0_shape).
@@ -268,7 +270,7 @@ class object_detection_metrics():
         return boxes
 
 
-    def update_metrics(preds, batch):
+    def update_metrics(self, preds, batch):
         for si, pred in enumerate(preds):
             idx = batch['batch_idx'] == si
             cls = batch['cls'][idx]
@@ -352,7 +354,7 @@ class object_detection_metrics():
                         self.matrix[dc, self.nc] += 1  # predicted background
 
 
-    def box_iou(box1, box2, eps=1e-7):
+    def box_iou(self, box1, box2, eps=1e-7):
         """
         Calculate intersection-over-union (IoU) of boxes.
         Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
@@ -373,3 +375,4 @@ class object_detection_metrics():
 
         # IoU = inter / (area1 + area2 - inter)
         return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
+
