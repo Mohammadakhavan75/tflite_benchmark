@@ -375,9 +375,6 @@ class object_detection_metrics():
         return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
 
 
+    def post_processing(self, preds):
+        return self.non_max_suppression(preds)
 
-
-def metric_calcualte(preds):
-    for batch_i, batch in enumerate(bar):
-        self.batch_i = batch_i
-        self.update_metrics(preds, batch)
