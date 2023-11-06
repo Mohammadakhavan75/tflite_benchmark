@@ -2,12 +2,11 @@ from tflite_loader import model_loader
 # import tflite_runtime.interpreter as mytflite
 import argparse
 import numpy as np
-from data_loader import data_loader
+from data_loader import data_loader, yolo_data_loader
 import time 
 import os
-from queue import Queue
 from tqdm import tqdm
-from utils import metrics
+from utils import metrics, object_detection_metrics
 
 """
 I should write a test for all possible inputs
@@ -116,4 +115,11 @@ if __name__ == '__main__':
               Average frame rate is: {1 / np.mean(times)}")
         exit()
     elif args.mode == 'object detection':
-        pass # do load data and inference
+        yolo = yolo_data_loader(args.yaml_file)
+        loader = yolo.load(type='val')
+        obj_metrics = object_detection_metrics()
+        for batch_i, batch in enumerate(loader):
+            preds = model(batch['img'], augment=yolo.args)
+            preds = obj_metrics.post_processing(preds)
+            obj_metrics.update_metrics(preds, batch)
+
