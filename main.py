@@ -27,8 +27,8 @@ def parsing():
     parser.add_argument('--img_path', help='Path for image file', type=str, default=None)
     parser.add_argument('--img_folder', help='Path for image folder', type=str, default=None)
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
-    parser.add_argument('--stream', help='Stream from device', type=int, default=None)
-    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection', type=str, default=None)
+    parser.add_argument('--yaml_file', help='Path for video file', type=str, default=None)
+    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection|stream', type=str, default=None)
     parser.add_argument('--annot_type', help='Annotation type can be coco', type=str, default='coco')
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
     parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
@@ -110,8 +110,10 @@ if __name__ == '__main__':
               Average frame rate is: {1 / np.mean(times)}")
         exit()
     # Stream from webcam
-    else: 
-        times = loader.load_vid(args.stream, model)
+    elif args.mode == 'stream': 
+        times = loader.load_vid(0, model)
         print(f"Average inference time is: {np.mean(times)}\n \
               Average frame rate is: {1 / np.mean(times)}")
         exit()
+    elif args.mode == 'object detection':
+        pass # do load data and inference
