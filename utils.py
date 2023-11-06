@@ -4,9 +4,6 @@ import os
 import torch
 
 
-FILE = Path(__file__).resolve()
-ROOT = FILE.parents[1]  # YOLO
-
 
 class COCOParser:
     def __init__(self, labels_root_path, imgs_root_path):
@@ -379,3 +376,8 @@ class object_detection_metrics():
 
 
 
+
+def metric_calcualte(preds):
+    for batch_i, batch in enumerate(bar):
+        self.batch_i = batch_i
+        self.update_metrics(preds, batch)
