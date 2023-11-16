@@ -36,3 +36,21 @@ Follow these steps to set up the benchmarking environment.
 
    ```bash
    git clone https://github.com/Mohammadakhavan75/tflite-benchmark.git
+   ```
+1.1 Installing required packages
+
+1.1.1 If you're running Debian Linux or a derivative of Debian please use this:
+  
+  ```bash
+  echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | sudo tee /etc/apt/sources.list.d/coral-edgetpu.list
+  curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+  sudo apt-get update
+  sudo apt-get install python3-tflite-runtime
+  ```
+
+1.1.1 For other systems you can use:
+  ```bash
+  pip install --extra-index-url https://google-coral.github.io/py-repo/ tflite_runtime
+  pip install -r requirements.txt
+  ```
+  

@@ -1,2 +1,3 @@
 tensorflow>2.12
-tflite-runtime>2.14.0
+numpy
+opencv-python
