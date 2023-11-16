@@ -2,12 +2,11 @@ from tflite_loader import model_loader
 # import tflite_runtime.interpreter as mytflite
 import argparse
 import numpy as np
-from data_loader import data_loader
+from data_loader import data_loader, yolo_data_loader
 import time 
 import os
-from queue import Queue
 from tqdm import tqdm
-from utils import metrics
+from utils import metrics, object_detection_metrics
 
 """
 I should write a test for all possible inputs
@@ -27,8 +26,8 @@ def parsing():
     parser.add_argument('--img_path', help='Path for image file', type=str, default=None)
     parser.add_argument('--img_folder', help='Path for image folder', type=str, default=None)
     parser.add_argument('--vid_path', help='Path for video file', type=str, default=None)
-    parser.add_argument('--stream', help='Stream from device', type=int, default=None)
-    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection', type=str, default=None)
+    parser.add_argument('--yaml_file', help='Path for video file', type=str, default=None)
+    parser.add_argument('--mode', help='Mode can be classification|object detection|object tracking|lane detection|stream', type=str, default=None)
     parser.add_argument('--annot_type', help='Annotation type can be coco', type=str, default='coco')
     parser.add_argument('--model_path', help='Model path file', type=str, required=True)
     parser.add_argument('--device', help='Device can be cuda or cpu or None', type=str, default=None)
@@ -39,20 +38,7 @@ def parsing():
 
     return args
 
-def queue_reader(loader, vid):
-    times = []
-    loader.load_vid(vid)
-    while True:
-        data = data_queue.get()
-        s = time.time()
-        out = model.inference(data)
-        e = time.time()
-        times.append(e-s)
-        print(f" Inference time is: {e-s}")
-        if not loader.ret:
-            break  # Break the loop if the video has ended
 
-    print(f" Average time is: {1 / np.mean(times)}")
 if __name__ == '__main__':
     args = parsing()
     # delegate_path = args.delegate_path
@@ -123,8 +109,17 @@ if __name__ == '__main__':
               Average frame rate is: {1 / np.mean(times)}")
         exit()
     # Stream from webcam
-    else: 
-        times = loader.load_vid(args.stream, model)
+    elif args.mode == 'stream': 
+        times = loader.load_vid(0, model)
         print(f"Average inference time is: {np.mean(times)}\n \
               Average frame rate is: {1 / np.mean(times)}")
         exit()
+    elif args.mode == 'object detection':
+        yolo = yolo_data_loader(args.yaml_file)
+        loader = yolo.load(type='val')
+        obj_metrics = object_detection_metrics()
+        for batch_i, batch in enumerate(loader):
+            preds = model(batch['img'], augment=yolo.args)
+            preds = obj_metrics.post_processing(preds)
+            obj_metrics.update_metrics(preds, batch)
+
